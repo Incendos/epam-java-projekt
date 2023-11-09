@@ -36,9 +36,10 @@ public class MovieServiceImpl implements MovieService {
     public Optional<MovieDto> updateMovie(String title, String genre, Duration length) {
         Optional<Movie> movie = movieRepository.findByTitle(title);
         if(movie.isPresent()) {
-            //Temp TODO
-            deleteMovie(title);
-            return createMovie(title, genre, length);
+            movie.get().setGenre(genre);
+            movie.get().setLength(length);
+            movieRepository.save(movie.get());
+            return Optional.of(new MovieDto(movie.get().getTitle(), movie.get().getGenre(), movie.get().getLength()));
         }
         return Optional.empty();
     }
