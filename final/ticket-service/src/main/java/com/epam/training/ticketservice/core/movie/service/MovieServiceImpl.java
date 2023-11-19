@@ -18,8 +18,9 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public Optional<MovieDto> createMovie(String title, String genre, Duration length) {
-        if(movieRepository.findByTitle(title).isPresent())
+        if (movieRepository.findByTitle(title).isPresent()) {
             return Optional.empty();
+        }
         Movie movie = new Movie(title, genre, length);
         movieRepository.save(movie);
         return Optional.of(new MovieDto(movie.getTitle(), movie.getGenre(), movie.getLength()));
@@ -35,7 +36,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Optional<MovieDto> updateMovie(String title, String genre, Duration length) {
         Optional<Movie> movie = movieRepository.findByTitle(title);
-        if(movie.isPresent()) {
+        if (movie.isPresent()) {
             movie.get().setGenre(genre);
             movie.get().setLength(length);
             movieRepository.save(movie.get());
@@ -47,7 +48,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public boolean deleteMovie(String title) {
         Optional<Movie> movie = movieRepository.findByTitle(title);
-        if(movie.isPresent()) {
+        if (movie.isPresent()) {
             movieRepository.delete(movie.get());
             return true;
         }

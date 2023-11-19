@@ -13,12 +13,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class RoomServiceImpl implements RoomService {
 
-    final private RoomRepository roomRepository;
+    private final RoomRepository roomRepository;
 
     @Override
     public Optional<RoomDto> createRoom(String name, Integer rowCount, Integer columnCount) {
-        if(roomRepository.findByName(name).isPresent())
+        if (roomRepository.findByName(name).isPresent()) {
             return Optional.empty();
+        }
         Room room = new Room(name, rowCount, columnCount);
         roomRepository.save(room);
         return Optional.of(new RoomDto(name, rowCount, columnCount));
@@ -27,8 +28,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public Optional<RoomDto> updateRoom(String name, Integer rowCount, Integer columnCount) {
         Optional<Room> room = roomRepository.findByName(name);
-        if(room.isPresent())
-        {
+        if (room.isPresent()) {
             room.get().setRowCount(rowCount);
             room.get().setColumnCount(columnCount);
             roomRepository.save(room.get());
@@ -40,7 +40,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public boolean deleteRoom(String name) {
         Optional<Room> room = roomRepository.findByName(name);
-        if(room.isPresent()) {
+        if (room.isPresent()) {
             roomRepository.delete(room.get());
             return true;
         }

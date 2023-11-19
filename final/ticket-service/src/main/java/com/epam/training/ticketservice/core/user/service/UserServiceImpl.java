@@ -16,9 +16,19 @@ public class UserServiceImpl implements UserService {
     private UserDto loggedInUser = null;
 
     @Override
-    public Optional<UserDto> login(String username, String password) {
+    public Optional<UserDto> loginAsAdmin(String username, String password) {
         Optional<User> user = userRepository.findByUsernameAndPassword(username, password);
-        if (user.isEmpty()) {
+        if (user.isEmpty() || user.get().getRole() == User.Role.USER) {
+            return Optional.empty();
+        }
+        loggedInUser = new UserDto(user.get().getUsername(), user.get().getRole());
+        return describe();
+    }
+
+    @Override
+    public Optional<UserDto> loginAsNotAdmin(String username, String password) {
+        Optional<User> user = userRepository.findByUsernameAndPassword(username, password);
+        if (user.isEmpty() || user.get().getRole() == User.Role.ADMIN) {
             return Optional.empty();
         }
         loggedInUser = new UserDto(user.get().getUsername(), user.get().getRole());
@@ -39,6 +49,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void registerUser(String username, String password) {
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Failed to register: Username is taken");
+        }
         User user = new User(username, password, User.Role.USER);
         userRepository.save(user);
     }

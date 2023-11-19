@@ -1,11 +1,14 @@
 package com.epam.training.ticketservice.core.screening.persistence;
 
+import com.epam.training.ticketservice.core.movie.persistence.Movie;
+import com.epam.training.ticketservice.core.room.persistance.Room;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,13 +19,17 @@ public class Screening {
     @Id
     Integer id;
 
-    String movieTitle;
-    String roomName;
+    @ManyToOne
+    Movie movie;
+
+    @ManyToOne
+    Room room;
+
     LocalDateTime dateTime;
 
-    public Screening(String movieTitle, String roomName, LocalDateTime dateTime) {
-        this.movieTitle = movieTitle;
-        this.roomName = roomName;
+    public Screening(Movie movie, Room room, LocalDateTime dateTime) {
+        this.movie = movie;
+        this.room = room;
         this.dateTime = dateTime;
     }
 }

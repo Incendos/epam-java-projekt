@@ -6,7 +6,10 @@ import java.util.Optional;
 
 public interface UserService {
 
-    Optional<UserDto> login(String username, String password);
+    Optional<UserDto> loginAsAdmin(String username, String password);
+
+
+    Optional<UserDto> loginAsNotAdmin(String username, String password);
 
     Optional<UserDto> logout();
 

@@ -10,6 +10,7 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
+
 @Entity
 @Table(name = "Users")
 @Data

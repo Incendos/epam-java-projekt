@@ -6,6 +6,8 @@ import com.epam.training.ticketservice.core.user.model.UserDto;
 import com.epam.training.ticketservice.core.user.persistence.User;
 import com.epam.training.ticketservice.core.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -17,40 +19,46 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ShellComponent
-@RequiredArgsConstructor
-public class MovieCommand {
+public class MovieCommand extends CommandBase {
 
     private final MovieService movieService;
-    private final UserService userService;
+
+    MovieCommand(MovieService movieService, UserService userService) {
+        super(userService);
+        this.movieService = movieService;
+    }
 
     @ShellMethodAvailability("isAdmin")
     @ShellMethod(key = "create movie", value = "create movie")
     public String createMovie(String title, String genre, Integer lengthAsMinutes) {
-        if(movieService.createMovie(title, genre, Duration.ofMinutes(lengthAsMinutes)).isPresent())
+        if (movieService.createMovie(title, genre, Duration.ofMinutes(lengthAsMinutes)).isPresent()) {
             return "Created movie successfully!";
+        }
         return "Movie already exists!";
     }
 
     @ShellMethodAvailability("isAdmin")
     @ShellMethod(key = "update movie", value = "update movie")
     public String updateMovie(String title, String genre, Integer lengthAsMinutes) {
-        if(movieService.updateMovie(title, genre, Duration.ofMinutes(lengthAsMinutes)).isPresent())
+        if (movieService.updateMovie(title, genre, Duration.ofMinutes(lengthAsMinutes)).isPresent()) {
             return "updated movie successfully!";
+        }
         return "Movie doesn't exists!";
     }
 
     @ShellMethodAvailability("isAdmin")
     @ShellMethod(key = "delete movie", value = "delete movie")
     public String deleteMovie(String title) {
-       if(movieService.deleteMovie(title))
-           return "Deleted movie: " + title;
-       return "Movie " + title + " doesn't exists!";
+        if (movieService.deleteMovie(title)) {
+            return "Deleted movie: " + title;
+        }
+        return "Movie " + title + " doesn't exists!";
     }
 
     @ShellMethod(key = "list movies", value = "list movies")
     public String listMovies() {
         List<MovieDto> movies = movieService.listMovies();
-        if(movies.size() > 0) {
+        if (movies.size() > 0) {
             return movies.stream()
                     .map((movieDto) -> movieDto.title()
                             + " ("
@@ -61,12 +69,5 @@ public class MovieCommand {
                     .collect(Collectors.joining("\n"));
         }
         return "There are no movies at the moment";
-    }
-
-    Availability isAdmin() {
-        Optional<UserDto> user = userService.describe();
-        if(user.isPresent() && user.get().role() == User.Role.ADMIN)
-            return Availability.available();
-        return Availability.unavailable("for Admins only!");
     }
 }
