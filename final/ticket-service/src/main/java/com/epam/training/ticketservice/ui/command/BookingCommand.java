@@ -3,18 +3,15 @@ package com.epam.training.ticketservice.ui.command;
 import com.epam.training.ticketservice.core.booking.model.BookingDto;
 import com.epam.training.ticketservice.core.booking.model.SeatDto;
 import com.epam.training.ticketservice.core.booking.service.BookingService;
-import com.epam.training.ticketservice.core.user.persistence.UserRepository;
 import com.epam.training.ticketservice.core.user.service.UserService;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellMethodAvailability;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
@@ -49,6 +46,25 @@ public class BookingCommand extends CommandBase {
                     + seatList.stream().map(SeatDto::toString).collect(Collectors.joining(", "))
                     + "; the price for this booking is "
                     + booking.price()
+                    + " HUF";
+        } catch (IllegalArgumentException e) {
+            return e.getMessage();
+        }
+    }
+
+    @ShellMethod(key = "show price for", value = "show price for")
+    public String showPriceFor(String movieTitle, String roomName, String dateTimeString, String seats) {
+        try {
+            LocalDateTime dateTime = LocalDateTime
+                    .parse(dateTimeString, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+            List<SeatDto> seatList = Arrays.stream(seats.split(" "))
+                    .map((seatString) -> seatString.split(","))
+                    .map((seatString) -> new SeatDto(parseInt(seatString[0]), parseInt(seatString[1])))
+                    .toList();
+
+            return "The price for this booking would be "
+                    + bookingService.showPriceFor(movieTitle, roomName, dateTime, seatList)
                     + " HUF";
         } catch (IllegalArgumentException e) {
             return e.getMessage();
