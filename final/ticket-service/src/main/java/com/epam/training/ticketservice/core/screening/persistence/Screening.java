@@ -40,5 +40,6 @@ public class Screening {
         this.movie = movie;
         this.room = room;
         this.dateTime = dateTime;
+        this.priceComponents = List.of();
     }
 }

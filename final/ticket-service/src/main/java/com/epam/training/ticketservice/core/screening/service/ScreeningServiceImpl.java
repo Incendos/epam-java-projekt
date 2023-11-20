@@ -24,7 +24,7 @@ public class ScreeningServiceImpl implements ScreeningService {
     private final ScreeningRepository screeningRepository;
     private final MovieRepository movieRepository;
     private final RoomRepository roomRepository;
-    private static final Duration CLEANING_BREAK_DURATION = Duration.ofMinutes(10);
+    public static final Duration CLEANING_BREAK_DURATION = Duration.ofMinutes(10);
 
     @Override
     public Optional<ScreeningDto> createScreening(String movieTitle, String roomName, LocalDateTime dateTime) {

@@ -40,5 +40,6 @@ public class Movie {
         this.title = title;
         this.genre = genre;
         this.length = length;
+        this.priceComponents = List.of();
     }
 }

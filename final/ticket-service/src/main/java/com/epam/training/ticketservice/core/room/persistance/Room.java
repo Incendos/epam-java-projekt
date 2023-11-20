@@ -35,5 +35,6 @@ public class Room {
         this.name = name;
         this.rowCount = rowCount;
         this.columnCount = columnCount;
+        this.priceComponents = List.of();
     }
 }
