@@ -34,22 +34,15 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDto book(String userName, String movieTitle, String roomName,
                            LocalDateTime dateTime, List<SeatDto> seats) {
-        Optional<Screening> screening = screeningRepository
-                .findByMovieTitleAndRoomNameAndDateTime(movieTitle, roomName, dateTime);
-
-        if (screening.isEmpty()) {
-            throw new IllegalArgumentException("No such screening exists");
+        String errorString = checkScreeningDetails(movieTitle, roomName, dateTime, seats);
+        if (!errorString.isEmpty()) {
+            throw new IllegalArgumentException(errorString);
         }
 
-        Room room = screening.get().getRoom();
-        for (SeatDto seat : seats) {
-            if (room.getRowCount() < seat.row() || seat.row() < 1
-                || room.getColumnCount() < seat.column() || seat.column() < 1) {
-                throw new IllegalArgumentException("Seat " + seat + " does not exist in this room");
-            }
-        }
+        Screening screening = screeningRepository.findByMovieTitleAndRoomNameAndDateTime(movieTitle,
+                roomName, dateTime).get();
 
-        bookingRepository.findAllByScreening(screening.get()).stream()
+        bookingRepository.findAllByScreening(screening).stream()
                 .map((booking) -> booking.getSeats().stream().map(SeatDto::new).toList())
                 .flatMap(Collection::stream)
                 .forEach((occupiedSeat) -> {
@@ -58,24 +51,14 @@ public class BookingServiceImpl implements BookingService {
                     }
                 });
 
-
         Optional<User> user = userRepository.findByUsername(userName);
         if (user.isEmpty() || user.get().getRole() == User.Role.ADMIN) {
             throw new IllegalArgumentException("Invalid User: log in as not an admin");
         }
 
-        int totalPrice = priceComponentRepository.findByName("BASE_PRICE_COMPONENT").get().getPrice();
-        for (PriceComponent priceComponent : room.getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
-        for (PriceComponent priceComponent : screening.get().getMovie().getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
-        for (PriceComponent priceComponent : screening.get().getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
+        int totalPrice = calcPriceFor(screening, seats.size());
 
-        Booking booking = new Booking(user.get(), screening.get(), seats.stream().map(Seat::new).toList(),
+        Booking booking = new Booking(user.get(), screening, seats.stream().map(Seat::new).toList(),
                 totalPrice * seats.size());
         bookingRepository.save(booking);
         return new BookingDto(booking);
@@ -94,31 +77,47 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Integer showPriceFor(String movieTitle, String roomName, LocalDateTime dateTime, List<SeatDto> seats) {
+        String errorString = checkScreeningDetails(movieTitle, roomName, dateTime, seats);
+        if (errorString.isEmpty()) {
+            return calcPriceFor(
+                    screeningRepository.findByMovieTitleAndRoomNameAndDateTime(movieTitle, roomName, dateTime).get(),
+                    seats.size());
+        }
+        throw new IllegalArgumentException(errorString);
+    }
+
+    public int calcPriceFor(Screening screening, int numOfSeats) {
+        int totalPrice = priceComponentRepository.findByName("BASE_PRICE_COMPONENT").get().getPrice();
+        for (PriceComponent priceComponent : screening.getRoom().getPriceComponents()) {
+            totalPrice += priceComponent.getPrice();
+        }
+        for (PriceComponent priceComponent : screening.getMovie().getPriceComponents()) {
+            totalPrice += priceComponent.getPrice();
+        }
+        for (PriceComponent priceComponent : screening.getPriceComponents()) {
+            totalPrice += priceComponent.getPrice();
+        }
+        return totalPrice * numOfSeats;
+    }
+
+    public String checkScreeningDetails(String movieTitle, String roomName,
+                                         LocalDateTime dateTime, List<SeatDto> seats) {
+
         Optional<Screening> screening = screeningRepository
                 .findByMovieTitleAndRoomNameAndDateTime(movieTitle, roomName, dateTime);
 
         if (screening.isEmpty()) {
-            throw new IllegalArgumentException("No such screening exists");
+            return "No such screening exists";
         }
 
         Room room = screening.get().getRoom();
         for (SeatDto seat : seats) {
             if (room.getRowCount() < seat.row() || seat.row() < 1
                     || room.getColumnCount() < seat.column() || seat.column() < 1) {
-                throw new IllegalArgumentException("Seat " + seat + " does not exist in this room");
+                return "Seat " + seat + " does not exist in this room";
             }
         }
 
-        int totalPrice = priceComponentRepository.findByName("BASE_PRICE_COMPONENT").get().getPrice();
-        for (PriceComponent priceComponent : room.getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
-        for (PriceComponent priceComponent : screening.get().getMovie().getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
-        for (PriceComponent priceComponent : screening.get().getPriceComponents()) {
-            totalPrice += priceComponent.getPrice();
-        }
-        return totalPrice * seats.size();
+        return "";
     }
 }
