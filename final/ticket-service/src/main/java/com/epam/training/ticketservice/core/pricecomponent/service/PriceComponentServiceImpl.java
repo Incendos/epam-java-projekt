@@ -35,7 +35,7 @@ public class PriceComponentServiceImpl implements PriceComponentService {
     @Override
     public void createPriceComponent(String name, Integer price) {
         if (priceComponentRepository.findByName(name).isPresent()) {
-            throw new IllegalArgumentException("A pricecomponent with this name already exists");
+            throw new IllegalArgumentException("A price component with this name already exists");
         }
         PriceComponent priceComponent = new PriceComponent(name, price);
         priceComponentRepository.save(priceComponent);
