@@ -18,7 +18,7 @@ class PriceComponentServiceImplTest {
     final private ScreeningRepository screeningRepository = mock(ScreeningRepository.class);
     final private PriceComponentRepository priceComponentRepository = mock(PriceComponentRepository.class);
 
-    final private PriceComponentService underTest =
+    final private PriceComponentServiceImpl underTest =
             new PriceComponentServiceImpl(priceComponentRepository, roomRepository,
                     movieRepository, screeningRepository);
 
@@ -41,5 +41,27 @@ class PriceComponentServiceImplTest {
                 underTest.createPriceComponent("comp", 100));
 
         verify(priceComponentRepository).findByName("comp");
+    }
+
+    @Test
+    void testInitShouldExecuteWithoutExceptionsWhenBasePriceCompIsPresent() {
+        PriceComponent priceComponent = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
+        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT"))
+                .thenReturn(Optional.of(priceComponent));
+
+        underTest.checkBasePriceComp();
+
+        verify(priceComponentRepository).findByName("BASE_PRICE_COMPONENT");
+    }
+
+    @Test
+    void testInitShouldThrowExceptionWhenBasePriceCompIsEmpty() {
+        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class, () ->
+                underTest.checkBasePriceComp());
+
+        verify(priceComponentRepository).findByName("BASE_PRICE_COMPONENT");
     }
 }
