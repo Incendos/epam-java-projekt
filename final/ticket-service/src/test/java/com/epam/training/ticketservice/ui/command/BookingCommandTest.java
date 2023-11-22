@@ -2,10 +2,6 @@ package com.epam.training.ticketservice.ui.command;
 
 import com.epam.training.ticketservice.core.booking.model.SeatDto;
 import com.epam.training.ticketservice.core.booking.service.BookingService;
-import com.epam.training.ticketservice.core.movie.service.MovieService;
-import com.epam.training.ticketservice.core.room.service.RoomService;
-import com.epam.training.ticketservice.core.screening.service.ScreeningService;
-import org.jline.reader.ParsedLine;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +10,14 @@ import org.springframework.shell.Shell;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+
 @SpringBootTest
 @ActiveProfiles("it")
-class BookingCommandIT {
+class BookingCommandTest {
     @Autowired
     private Shell shell;
 
@@ -34,7 +30,7 @@ class BookingCommandIT {
         shell.evaluate(() -> "sign in privileged admin admin");
         shell.evaluate(() -> "create movie shrek drama 120");
         shell.evaluate(() -> "create room szoba 10 10");
-        //Agyhalál
+
         Input input = new Input() {
             @Override
             public String rawText() {
