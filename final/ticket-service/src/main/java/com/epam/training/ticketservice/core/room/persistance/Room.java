@@ -5,12 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.validator.constraints.pl.PESEL;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Column;
 import javax.persistence.OneToMany;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -35,6 +37,6 @@ public class Room {
         this.name = name;
         this.rowCount = rowCount;
         this.columnCount = columnCount;
-        this.priceComponents = List.of();
+        this.priceComponents = new ArrayList<>();
     }
 }

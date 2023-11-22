@@ -13,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Column;
 import javax.persistence.OneToMany;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -40,6 +41,6 @@ public class Movie {
         this.title = title;
         this.genre = genre;
         this.length = length;
-        this.priceComponents = List.of();
+        this.priceComponents = new ArrayList<>();
     }
 }

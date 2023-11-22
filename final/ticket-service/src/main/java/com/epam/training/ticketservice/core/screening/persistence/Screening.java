@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -40,6 +41,6 @@ public class Screening {
         this.movie = movie;
         this.room = room;
         this.dateTime = dateTime;
-        this.priceComponents = List.of();
+        this.priceComponents = new ArrayList<>();
     }
 }
