@@ -69,27 +69,6 @@ class PriceComponentServiceImplTest {
     }
 
     @Test
-    void testInitShouldExecuteWithoutExceptionsWhenBasePriceCompIsPresent() {
-        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT"))
-                .thenReturn(Optional.of(basePriceComp));
-
-        underTest.checkBasePriceComp();
-
-        verify(priceComponentRepository).findByName("BASE_PRICE_COMPONENT");
-    }
-
-    @Test
-    void testInitShouldThrowExceptionWhenBasePriceCompIsEmpty() {
-        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT"))
-                .thenReturn(Optional.empty());
-
-        assertThrows(IllegalStateException.class, () ->
-                underTest.checkBasePriceComp());
-
-        verify(priceComponentRepository).findByName("BASE_PRICE_COMPONENT");
-    }
-
-    @Test
     void testUpdateBasePriceShouldUpdateTheBasePrice() {
         when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT")).thenReturn(Optional.of(basePriceComp));
 

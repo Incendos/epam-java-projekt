@@ -25,13 +25,6 @@ public class PriceComponentServiceImpl implements PriceComponentService {
     private final MovieRepository movieRepository;
     private final ScreeningRepository screeningRepository;
 
-    @PostConstruct
-    public void checkBasePriceComp() {
-        if (priceComponentRepository.findByName("BASE_PRICE_COMPONENT").isEmpty()) {
-            throw new IllegalStateException("Base price component is not present in db");
-        }
-    }
-
     @Override
     public void createPriceComponent(String name, Integer price) {
         if (priceComponentRepository.findByName(name).isPresent()) {
