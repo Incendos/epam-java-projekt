@@ -59,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
         int totalPrice = calcPriceFor(screening, seats.size());
 
         Booking booking = new Booking(user.get(), screening, seats.stream().map(Seat::new).toList(),
-                totalPrice * seats.size());
+                totalPrice);
         bookingRepository.save(booking);
         return new BookingDto(booking);
     }
