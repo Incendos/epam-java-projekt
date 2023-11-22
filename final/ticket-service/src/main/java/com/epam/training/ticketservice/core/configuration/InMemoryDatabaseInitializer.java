@@ -12,7 +12,7 @@ import javax.annotation.PostConstruct;
 
 @Component
 @RequiredArgsConstructor
-@Profile("!prod")
+@Profile("!default")
 public class InMemoryDatabaseInitializer {
 
     private final UserRepository userRepository;
