@@ -9,6 +9,7 @@ import com.epam.training.ticketservice.core.room.persistance.RoomRepository;
 import com.epam.training.ticketservice.core.screening.model.ScreeningDto;
 import com.epam.training.ticketservice.core.screening.persistence.Screening;
 import com.epam.training.ticketservice.core.screening.persistence.ScreeningRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -29,22 +30,28 @@ class ScreeningServiceImplTest {
             movieRepository, roomRepository);
 
 
+    private static Movie movie;
+    private static Room room;
+    private static LocalDateTime dateTime;
+    private static Screening screening;
+
+    @BeforeEach
+    void init() {
+        movie = new Movie("movie", "genre", Duration.ofMinutes(100));
+        room = new Room("room", 10, 10);
+        dateTime = LocalDateTime.of(2023,1,1,16,0);
+        screening = new Screening(movie, room, dateTime.minus(Duration.ofMinutes(100)));
+    }
 
     @Test
     void testCreateScreeningShouldReturnDtoWhenItCreatesAScreening() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.of(movie));
-
-        Room room = new Room("room", 10, 10);
         when(roomRepository.findByName("room")).thenReturn(Optional.of(room));
-
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime.minus(Duration.ofMinutes(100)));
+        Screening notOverlappingScreening = new Screening(movie, room, dateTime.minus(Duration.ofMinutes(200)));
         when(screeningRepository.findAllByRoomAndDateTimeBefore(ArgumentMatchers.any(), ArgumentMatchers.any()))
-                .thenReturn(List.of(screening));
+                .thenReturn(List.of(notOverlappingScreening));
 
         ScreeningDto expected = new ScreeningDto(new MovieDto(movie), new RoomDto(room), dateTime);
-
         assertEquals(expected, underTest.createScreening("movie", "room", dateTime).get());
 
         verify(movieRepository).findByTitle("movie");
@@ -57,20 +64,18 @@ class ScreeningServiceImplTest {
         when(movieRepository.findByTitle(ArgumentMatchers.any())).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
-                underTest.createScreening("movie", "room", LocalDateTime.now()));
+                underTest.createScreening("movie", "room", dateTime));
 
         verify(movieRepository).findByTitle(ArgumentMatchers.any());
     }
 
     @Test
     void testCreateScreeningShouldThrowExceptionWhenRoomIsEmpty() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.of(movie));
-
         when(roomRepository.findByName(ArgumentMatchers.any())).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
-                underTest.createScreening("movie", "room", LocalDateTime.now()));
+                underTest.createScreening("movie", "room", dateTime));
 
         verify(movieRepository).findByTitle("movie");
         verify(roomRepository).findByName(ArgumentMatchers.any());
@@ -78,16 +83,11 @@ class ScreeningServiceImplTest {
 
     @Test
     void testCreateScreeningShouldThrowExceptionDuringOverLappingScreening() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.of(movie));
-
-        Room room = new Room("room", 10, 10);
         when(roomRepository.findByName("room")).thenReturn(Optional.of(room));
-
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
+        Screening overlappingScreening = new Screening(movie, room, dateTime);
         when(screeningRepository.findAllByRoomAndDateTimeBefore(ArgumentMatchers.any(), ArgumentMatchers.any()))
-                .thenReturn(List.of(screening));
+                .thenReturn(List.of(overlappingScreening));
 
         assertThrows(IllegalArgumentException.class, () ->
                 underTest.createScreening("movie", "room", dateTime));
@@ -99,19 +99,14 @@ class ScreeningServiceImplTest {
 
     @Test
     void testCreateScreeningShouldThrowExceptionDuringOverLappingCleaning() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.of(movie));
-
-        Room room = new Room("room", 10, 10);
         when(roomRepository.findByName("room")).thenReturn(Optional.of(room));
-
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
+        Screening overlappingScreening = new Screening(movie, room, dateTime.minus(Duration.ofMinutes(105)));
         when(screeningRepository.findAllByRoomAndDateTimeBefore(ArgumentMatchers.any(), ArgumentMatchers.any()))
-                .thenReturn(List.of(screening));
+                .thenReturn(List.of(overlappingScreening));
 
         assertThrows(IllegalArgumentException.class, () ->
-                underTest.createScreening("movie", "room", dateTime.plus(Duration.ofMinutes(5))));
+                underTest.createScreening("movie", "room", dateTime));
 
         verify(movieRepository).findByTitle("movie");
         verify(roomRepository).findByName("room");
@@ -120,12 +115,6 @@ class ScreeningServiceImplTest {
 
     @Test
     void testDeleteScreeningShouldReturnTrueWhenItDeletesScreening() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie",
                 "room", dateTime)).thenReturn(Optional.of(screening));
 
@@ -140,7 +129,8 @@ class ScreeningServiceImplTest {
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Optional.empty());
 
-        assertFalse(underTest.deleteScreening("movie", "room", LocalDateTime.now()));
+        assertFalse(underTest.deleteScreening("movie", "room",
+                dateTime));
 
         verify(screeningRepository).findByMovieTitleAndRoomNameAndDateTime(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any());
@@ -148,16 +138,9 @@ class ScreeningServiceImplTest {
 
     @Test
     void testListScreeningsShouldReturnAListOfScreenings() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findAll()).thenReturn(List.of(screening));
 
         List<ScreeningDto> expected = List.of(new ScreeningDto(screening));
-
         assertEquals(expected, underTest.listScreenings());
 
         verify(screeningRepository).findAll();

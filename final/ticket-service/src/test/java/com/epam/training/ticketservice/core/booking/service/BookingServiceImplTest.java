@@ -14,6 +14,7 @@ import com.epam.training.ticketservice.core.screening.persistence.Screening;
 import com.epam.training.ticketservice.core.screening.persistence.ScreeningRepository;
 import com.epam.training.ticketservice.core.user.persistence.User;
 import com.epam.training.ticketservice.core.user.persistence.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -35,27 +36,45 @@ class BookingServiceImplTest {
     private final BookingServiceImpl underTest = new BookingServiceImpl(bookingRepository,
             screeningRepository, userRepository, priceComponentRepository);
 
+    private static Movie movie;
+    private static Room room;
+    private static LocalDateTime dateTime;
+    private static Screening screening;
+    private static User user;
+    private static User admin;
+    private static PriceComponent basePriceComp;
+    private static List<SeatDto> seats;
+    private static Booking booking;
+    private static PriceComponent extraPriceComp;
+
+    @BeforeEach
+    void initEntities() {
+        movie = new Movie("movie", "genre", Duration.ofMinutes(1));
+        room = new Room("room", 10, 10);
+        dateTime = LocalDateTime.of(2023,1,1,16,0);
+        screening = new Screening(movie, room, dateTime);
+        user = new User("user", "user", User.Role.USER);
+        admin = new User("admin", "admin", User.Role.ADMIN);
+        basePriceComp = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
+        seats = List.of(new SeatDto(1,1));
+        booking = new Booking(user, screening, List.of(new Seat(5,5),
+                new Seat(1, 1)), 1500);
+        extraPriceComp = new PriceComponent("extra100", 100);
+
+        movie.setPriceComponents(List.of(extraPriceComp));
+        room.setPriceComponents(List.of(extraPriceComp));
+        screening.setPriceComponents(List.of(extraPriceComp));
+    }
+
     @Test
     void testBookShouldReturnDtoWhenItCreatesABooking() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
-
         when(bookingRepository.findAllByScreening(ArgumentMatchers.any())).thenReturn(List.of());
-
-        User user = new User("user", "user", User.Role.USER);
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
-
-        PriceComponent basePriceComp = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
         when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT")).thenReturn(Optional.of(basePriceComp));
 
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
-        BookingDto expected = new BookingDto(new ScreeningDto(screening), seats, 1500);
-
+        BookingDto expected = new BookingDto(new ScreeningDto(screening), seats, 1800);
         assertEquals(expected, underTest.book("user", "movie", "room", dateTime, seats));
 
         verify(screeningRepository, times(2))
@@ -71,7 +90,8 @@ class BookingServiceImplTest {
                 ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Optional.empty());
 
         assertEquals("No such screening exists",
-                underTest.checkScreeningDetails("movie", "room", LocalDateTime.now(), List.of()));
+                underTest.checkScreeningDetails("movie", "room",
+                        dateTime, List.of()));
 
         verify(screeningRepository).findByMovieTitleAndRoomNameAndDateTime(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any());
@@ -79,11 +99,6 @@ class BookingServiceImplTest {
 
     @Test
     void testCheckScreeningDetailsShouldReturnNonEmptyStringWhenASeatDoesNotExistsInTheRoom() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
 
@@ -96,25 +111,15 @@ class BookingServiceImplTest {
         assertFalse(underTest.checkScreeningDetails(
                 "movie", "room", dateTime, List.of(new SeatDto(5,111))).isEmpty());
 
-      verify(screeningRepository, times(4))
+        verify(screeningRepository, times(4))
                 .findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime);
     }
 
     @Test
     void testBookShouldThrowExceptionWhenASSeatIsOccupied() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
-
-        User user = new User("user", "user", User.Role.USER);
-        Booking booking = new Booking(user, screening, List.of(new Seat(5,5), new Seat(1, 1)), 1500);
         when(bookingRepository.findAllByScreening(ArgumentMatchers.any())).thenReturn(List.of(booking));
-
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
 
         assertThrows(IllegalArgumentException.class, () -> underTest.book("user",
                 "movie", "room", dateTime, seats));
@@ -126,20 +131,13 @@ class BookingServiceImplTest {
 
     @Test
     void testBookShouldThrowExceptionWhenUserIsEmpty() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
         when(bookingRepository.findAllByScreening(ArgumentMatchers.any())).thenReturn(List.of());
         when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
 
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
         assertThrows(IllegalArgumentException.class, () ->
-                underTest.book("user", "movie", "room",
-                        dateTime, seats));
+                underTest.book("user", "movie", "room", dateTime, seats));
 
         verify(screeningRepository, times(2))
                 .findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime);
@@ -149,19 +147,11 @@ class BookingServiceImplTest {
 
     @Test
     void testBookShouldThrowExceptionWhenUserIsAdmin() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
         when(bookingRepository.findAllByScreening(ArgumentMatchers.any())).thenReturn(List.of());
-
-        User admin = new User("admin", "admin", User.Role.ADMIN);
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
         assertThrows(IllegalArgumentException.class, () ->
                 underTest.book("admin", "movie", "room",
                         dateTime, seats));
@@ -179,7 +169,8 @@ class BookingServiceImplTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 underTest.book("user", "movie",
-                        "room", LocalDateTime.now(), List.of()));
+                        "room",
+                        dateTime, List.of()));
 
         verify(screeningRepository).findByMovieTitleAndRoomNameAndDateTime(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any());
@@ -187,24 +178,9 @@ class BookingServiceImplTest {
 
     @Test
     void testShowPriceForShouldReturnTheCostOfBookingWhenParametersAreValid() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-
-        PriceComponent extraPriceComp = new PriceComponent("extra100", 100);
-
-        movie.setPriceComponents(List.of(extraPriceComp));
-        room.setPriceComponents(List.of(extraPriceComp));
-        screening.setPriceComponents(List.of(extraPriceComp));
-
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room", dateTime))
                 .thenReturn(Optional.of(screening));
-
-        PriceComponent basePriceComp = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
         when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT")).thenReturn(Optional.of(basePriceComp));
-
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
 
         assertEquals(1800, underTest.showPriceFor( "movie",
                 "room", dateTime, seats));
@@ -220,7 +196,7 @@ class BookingServiceImplTest {
                 ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> underTest.showPriceFor("movie",
-                "room", LocalDateTime.now(), List.of()));
+                "room", dateTime, List.of()));
 
         verify(screeningRepository).findByMovieTitleAndRoomNameAndDateTime(ArgumentMatchers.any(),
                 ArgumentMatchers.any(), ArgumentMatchers.any());
@@ -228,20 +204,10 @@ class BookingServiceImplTest {
 
     @Test
     void testListBookingsShouldReturnWithTheUserBookings() {
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
-        User user = new User("user", "user", User.Role.USER);
-        List<Seat> seats = List.of(new Seat(1,1));
-
-        Booking booking = new Booking(user, screening, seats,1500);
-
         when(bookingRepository.findAllByUser(user)).thenReturn(List.of(booking));
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
 
         List<BookingDto> expected = List.of(new BookingDto(booking));
-
         assertEquals(expected, underTest.listBookings("user"));
 
         verify(bookingRepository).findAllByUser(user);
@@ -259,12 +225,10 @@ class BookingServiceImplTest {
 
     @Test
     void testListBookingsShouldThrowExceptionWhenUserIsAdmin() {
-        User admin = new User("admin", "admin", User.Role.ADMIN);
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
         assertThrows(IllegalArgumentException.class, () -> underTest.listBookings("admin"));
 
         verify(userRepository).findByUsername("admin");
     }
-
 }

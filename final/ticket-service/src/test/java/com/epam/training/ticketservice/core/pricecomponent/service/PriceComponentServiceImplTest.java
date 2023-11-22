@@ -8,6 +8,7 @@ import com.epam.training.ticketservice.core.room.persistance.Room;
 import com.epam.training.ticketservice.core.room.persistance.RoomRepository;
 import com.epam.training.ticketservice.core.screening.persistence.Screening;
 import com.epam.training.ticketservice.core.screening.persistence.ScreeningRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -29,6 +30,25 @@ class PriceComponentServiceImplTest {
             new PriceComponentServiceImpl(priceComponentRepository, roomRepository,
                     movieRepository, screeningRepository);
 
+
+    private static PriceComponent priceComponent;
+    private static PriceComponent basePriceComp;
+    private static Room room;
+    private static Movie movie;
+    private static LocalDateTime dateTime;
+    private static Screening screening;
+
+
+    @BeforeEach
+    void init() {
+        priceComponent = new PriceComponent("comp", 100);
+        basePriceComp = new PriceComponent("BASE_PRICE_COMP", 1500);
+        room = new Room("room", 10, 10);
+        movie = new Movie("movie", "genre", Duration.ofMinutes(1));
+        dateTime = LocalDateTime.of(2023,1,1,16,0);
+        screening = new Screening(movie, room, dateTime);
+    }
+
     @Test
     void testCreatePriceComponentShouldCreatePriceComponentWhenParametersAreValid() {
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.empty());
@@ -40,9 +60,7 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testCreatePriceComponentShouldThrowExceptionWhenCompAlreadyExists() {
-        PriceComponent priceComponent = new PriceComponent("comp", 100);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
 
         assertThrows(IllegalArgumentException.class, () ->
                 underTest.createPriceComponent("comp", 100));
@@ -52,9 +70,8 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testInitShouldExecuteWithoutExceptionsWhenBasePriceCompIsPresent() {
-        PriceComponent priceComponent = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
         when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT"))
-                .thenReturn(Optional.of(priceComponent));
+                .thenReturn(Optional.of(basePriceComp));
 
         underTest.checkBasePriceComp();
 
@@ -74,21 +91,17 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testUpdateBasePriceShouldUpdateTheBasePrice() {
-        PriceComponent priceComponent = new PriceComponent("BASE_PRICE_COMPONENT", 1500);
-        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT")).thenReturn(Optional.of(priceComponent));
+        when(priceComponentRepository.findByName("BASE_PRICE_COMPONENT")).thenReturn(Optional.of(basePriceComp));
 
         underTest.updateBasePrice(3000);
-        assertEquals(3000, priceComponent.getPrice());
+        assertEquals(3000, basePriceComp.getPrice());
 
         verify(priceComponentRepository).findByName("BASE_PRICE_COMPONENT");
     }
 
     @Test
     void testAttachPriceComponentToRoomShouldAttachTheCompToTheRoom() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
-        Room room = new Room("room", 10, 10);
         when(roomRepository.findByName("room")).thenReturn(Optional.of(room));
 
         underTest.attachPriceComponentToRoom("comp", "room");
@@ -112,9 +125,7 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testAttachPriceComponentToRoomShouldThrowExceptionWhenRoomIsEmpty() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
         when(roomRepository.findByName("room")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
@@ -126,10 +137,7 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testAttachPriceComponentToMovieShouldAttachTheComponent() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(1));
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.of(movie));
 
         underTest.attachPriceComponentToMovie("comp", "movie");
@@ -153,9 +161,7 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testAttachPriceComponentToMovieShouldThrowExceptionWhenMovieIsEmpty() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
         when(movieRepository.findByTitle("movie")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
@@ -167,13 +173,7 @@ class PriceComponentServiceImplTest {
 
     @Test
     void testAttachPriceComponentToScreeningShouldAttachPriceComponentWhenParametersAreValid() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
-        Movie movie = new Movie("movie", "genre", Duration.ofMinutes(100));
-        Room room = new Room("room", 10, 10);
-        LocalDateTime dateTime = LocalDateTime.now();
-        Screening screening = new Screening(movie, room, dateTime);
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room",
                 dateTime)).thenReturn(Optional.of(screening));
 
@@ -194,17 +194,14 @@ class PriceComponentServiceImplTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 underTest.attachPriceComponentToScreening("comp", "movie",
-                        "room", LocalDateTime.now()));
+                        "room", dateTime));
 
         verify(priceComponentRepository).findByName("comp");
     }
 
     @Test
     void testAttachPriceComponentToScreeningShouldThrowExceptionWhenScreeningIsEmpty() {
-        PriceComponent priceComponent = new PriceComponent("comp", 500);
         when(priceComponentRepository.findByName("comp")).thenReturn(Optional.of(priceComponent));
-
-        LocalDateTime dateTime = LocalDateTime.now();
         when(screeningRepository.findByMovieTitleAndRoomNameAndDateTime("movie", "room",
                 dateTime)).thenReturn(Optional.empty());
 
