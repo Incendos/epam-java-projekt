@@ -25,13 +25,12 @@ class BookingCommandTest {
     private BookingService bookingService;
 
     @Test
-    void testShowPriceForCommandShouldReturnTheCorrectCost() {
-        //Given
+    void testBookCommandShouldLetTheSignInUserBook() {
         shell.evaluate(() -> "sign in privileged admin admin");
         shell.evaluate(() -> "create movie shrek drama 120");
         shell.evaluate(() -> "create room szoba 10 10");
 
-        Input input = new Input() {
+        Input createScreeningInput = new Input() {
             @Override
             public String rawText() {
                 return "create screening shrek szoba \"2023-01-01 16:00\"";
@@ -42,10 +41,23 @@ class BookingCommandTest {
                 return List.of("create", "screening", "shrek", "szoba", "2023-01-01 16:00");
             }
         };
-        shell.evaluate(input);
+        shell.evaluate(createScreeningInput);
 
-        LocalDateTime dateTime = LocalDateTime.of(2023,1,1,16,0);
-        List<SeatDto> seats = List.of(new SeatDto(1,1));
-        assertEquals(1500, bookingService.showPriceFor("shrek", "szoba", dateTime, seats));
+        shell.evaluate(() -> "sign up user user");
+        shell.evaluate(() -> "sign in user user");
+        Input bookingInput = new Input() {
+            @Override
+            public String rawText() {
+                return "book shrek szoba \"2023-01-01 16:00\" \"1,1\"";
+            }
+
+            @Override
+            public List<String> words() {
+                return List.of("book", "shrek", "szoba", "2023-01-01 16:00", "1,1");
+            }
+        };
+
+        assertEquals("Seats booked: (1,1); the price for this booking is 1500 HUF",
+                shell.evaluate(bookingInput));
     }
 }
